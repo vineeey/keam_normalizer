@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>KEAM Score App - Enter Marks</title>
+  <link rel="stylesheet" href="/static/css/styles.css" />
+  <style>
+    /* Match intro.html styles */
+    body {
+      background-color: #0f0f0f;
+      color: #fefefe;
+      font-family: 'Segoe UI', sans-serif;
+      padding-top: 80px;
+      margin: 0;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 40px;
+      background: rgba(30, 30, 30, 0.8);
+      border-radius: 10px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    }
+
+    h2 {
+      text-align: center;
+      margin-bottom: 25px;
+      color: #ffd369;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 500;
+    }
+
+    input, select {
+      width: 100%;
+      padding: 12px;
+      background-color: #1a1a1a;
+      border: 1px solid #444;
+      border-radius: 6px;
+      color: #fefefe;
+      font-size: 16px;
+    }
+
+    button[type="submit"] {
+      background-color: #ffd369;
+      color: #111;
+      padding: 12px 24px;
+      border: none;
+      border-radius: 6px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      width: 100%;
+      margin-top: 15px;
+    }
+
+    .error-box {
+      background: rgba(255, 0, 0, 0.1);
+      color: #ff9999;
+      padding: 15px;
+      margin-bottom: 25px;
+      border-radius: 6px;
+      border-left: 4px solid #ff5555;
+    }
+  </style>
+</head>
+<body class="theme-default">
+  <div class="container">
+    <h2>🎯 Enter Your Marks</h2>
+    <p style="text-align: center;"><strong>Selected Year:</strong> {{ year.value }}</p>
+
+    {% if form.errors %}
+      <div class="error-box">
+        <strong>Please correct these errors:</strong>
+        <ul>
+          {% for field, errors in form.errors.items %}
+            {% for error in errors %}
+              <li>{{ field }}: {{ error }}</li>
+            {% endfor %}
+          {% endfor %}
+        </ul>
+      </div>
+    {% endif %}
+
+    <form method="POST" action="{% url 'keam_app:result' %}">
+      {% csrf_token %}
+
+      <div class="form-group">
+        <label for="id_board">Board:</label>
+        {{ form.board }}
+      </div>
+
+      <div class="form-group">
+        <label for="id_maths">Maths Mark:</label>
+        {{ form.maths }}
+      </div>
+
+      <div class="form-group">
+        <label for="id_physics">Physics Mark:</label>
+        {{ form.physics }}
+      </div>
+
+      <div class="form-group">
+        <label for="id_chemistry">Chemistry Mark:</label>
+        {{ form.chemistry }}
+      </div>
+
+      <div class="form-group">
+        <label for="id_entrance">KEAM Entrance Exam Score (out of 300):</label>
+        {{ form.entrance }}
+      </div>
+
+      <button type="submit">🧮 Calculate KEAM Score</button>
+    </form>
+  </div>
+
+  <!-- Theme Switcher (same as intro.html) -->
+  <!-- Replace the theme-switcher div with this -->
+  <div class="theme-switcher">
+    <div class="theme-dropdown">
+      <button class="theme-btn">🎨 Themes</button>
+      <div class="theme-options">
+        <button onclick="setTheme('default')">Theme 1</button>
+        <button onclick="setTheme('ocean')">Theme 2</button>
+        <button onclick="setTheme('sunset')">Theme 3</button>
+        <button onclick="setTheme('matrix')">Theme 4</button>
+        <button onclick="setTheme('plain')">Theme5</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function setTheme(name) {
+      document.body.className = document.body.className.replace(/theme-\w+/g, "");
+      document.body.classList.add("theme-" + name);
+      localStorage.setItem("theme", name);
+    }
+
+    // Apply saved theme on load
+    document.addEventListener("DOMContentLoaded", () => {
+      const saved = localStorage.getItem("theme") || "default";
+      document.body.classList.add("theme-" + saved);
+    });
+  </script>
+</body>
+</html>

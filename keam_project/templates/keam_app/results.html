@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>KEAM Results</title>
+  {% load static %}
+  <link rel="stylesheet" href="{% static 'css/styles.css' %}" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="theme-default">
+  <!-- Replace the theme-switcher div with this -->
+  <div class="theme-switcher">
+    <div class="theme-dropdown">
+      <button class="theme-btn">🎨 Themes</button>
+      <div class="theme-options">
+        <button onclick="setTheme('default')">Theme 1</button>
+        <button onclick="setTheme('ocean')">Theme 2</button>
+        <button onclick="setTheme('sunset')">Theme 3</button>
+        <button onclick="setTheme('matrix')">Theme 4</button>
+        <button onclick="setTheme('plain')">Theme5</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="container">
+    {% if errors %}
+      <div class="error-box">
+        <h3 style="margin-top: 0;">⚠️ Important Notes About Your Results</h3>
+        <ul style="margin-bottom: 0;">
+          {% for err in errors %}
+            <li>{{ err }}</li>
+          {% endfor %}
+        </ul>
+        <p style="margin-top: 10px; margin-bottom: 0; font-size: 0.9em;">
+          Some statistics were not available, so default values were used.
+          This may affect the accuracy of your normalized scores.
+        </p>
+      </div>
+    {% endif %}
+
+    {% if result %}
+      <div class="result-card">
+        <h2 style="margin-top: 0;">✅ Your KEAM Normalized Score</h2>
+
+        <div class="chart-container">
+          <canvas id="scoreChart"></canvas>
+        </div>
+
+        <ul class="result-list">
+          <li><span>Maths (Weight: 5):</span> <span class="result-value">{{ result.normalized.maths.normalized_mark|floatformat:4 }}</span></li>
+          <li><span>Physics (Weight: 3):</span> <span class="result-value">{{ result.normalized.physics.normalized_mark|floatformat:4 }}</span></li>
+          <li><span>Chemistry (Weight: 2):</span> <span class="result-value">{{ result.normalized.chemistry.normalized_mark|floatformat:4 }}</span></li>
+          <li><span>Weighted Total:</span> <span class="result-value">{{ result.normalized_total|floatformat:4 }}</span></li>
+          {% if result.original.entrance %}
+          <li><span>Entrance Score:</span> <span class="result-value">{{ result.original.entrance|floatformat:4 }}</span></li>
+          {% endif %}
+          <li><span>Final KEAM Index:</span> <span class="result-value">{{ result.final_score|floatformat:4 }}</span></li>
+        </ul>
+
+        <details>
+          <summary>📊 Show Detailed Calculation</summary>
+          <div style="margin-top: 15px;">
+            <h4>🔹 Normalization Process</h4>
+            <p style="background: #333; padding: 10px; border-radius: 5px;">
+              <strong>Z-score = (Your Mark - Board Mean) ÷ Board SD</strong><br>
+              <strong>Percentile = Φ(Z) from normal distribution</strong><br>
+              <strong>Kerala Z = Φ⁻¹(Percentile)</strong><br>
+              <strong>Normalized Mark = Kerala Mean + (Kerala Z × Kerala SD)</strong>
+            </p>
+
+            <h4>📐 Subject-wise Calculation</h4>
+            <div style="overflow-x: auto;">
+              <table style="width: 100%; border-collapse: collapse; margin: 15px 0;">
+                <thead>
+                  <tr style="background: #333;">
+                    <th style="padding: 10px; text-align: left;">Parameter</th>
+                    <th style="padding: 10px; text-align: left;">Maths</th>
+                    <th style="padding: 10px; text-align: left;">Physics</th>
+                    <th style="padding: 10px; text-align: left;">Chemistry</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td style="padding: 8px; border-bottom: 1px solid #444;">Board</td>
+                    <td style="padding: 8px; border-bottom: 1px solid #444;">{{ result.normalized.maths.board_name }}</td>
+                    <td style="padding: 8px; border-bottom: 1px solid #444;">{{ result.normalized.physics.board_name }}</td>
+                    <td style="padding: 8px; border-bottom: 1px solid #444;">{{ result.normalized.chemistry.board_name }}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 8px; border-bottom: 1px solid #444;">Your Mark</td>
+                    <td style="padding: 8px; border-bottom: 1px solid #444;">{{ result.original.maths }}</td>
+                    <td style="padding: 8px; border-bottom: 1px solid #444;">{{ result.original.physics }}</td>
+                    <td style="padding: 8px; border-bottom: 1px solid #444;">{{ result.original.chemistry }}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 8px; border-bottom: 1px solid #444;">Board Mean</td>
+                    <td style="padding: 8px; border-bottom: 1px solid #444;">{{ result.normalized.maths.mean_source|default:"70.0" }}</td>
+                    <td style="padding: 8px; border-bottom: 1px solid #444;">{{ result.normalized.physics.mean_source|default:"70.0" }}</td>
+                    <td style="padding: 8px; border-bottom: 1px solid #444;">{{ result.normalized.chemistry.mean_source|default:"70.0" }}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 8px; border-bottom: 1px solid #444;">Board SD</td>
+                    <td style="padding: 8px; border-bottom: 1px solid #444;">{{ result.normalized.maths.sd_source|default:"10.0" }}</td>
+                    <td style="padding: 8px; border-bottom: 1px solid #444;">{{ result.normalized.physics.sd_source|default:"10.0" }}</td>
+                    <td style="padding: 8px; border-bottom: 1px solid #444;">{{ result.normalized.chemistry.sd_source|default:"10.0" }}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 8px; border-bottom: 1px solid #444;">Z-score</td>
+                    <td style="padding: 8px; border-bottom: 1px solid #444;">{{ result.normalized.maths.z_score|floatformat:4 }}</td>
+                    <td style="padding: 8px; border-bottom: 1px solid #444;">{{ result.normalized.physics.z_score|floatformat:4 }}</td>
+                    <td style="padding: 8px; border-bottom: 1px solid #444;">{{ result.normalized.chemistry.z_score|floatformat:4 }}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 8px; border-bottom: 1px solid #444;">Normalized Mark</td>
+                    <td style="padding: 8px; border-bottom: 1px solid #444;">{{ result.normalized.maths.normalized_mark|floatformat:4 }}</td>
+                    <td style="padding: 8px; border-bottom: 1px solid #444;">{{ result.normalized.physics.normalized_mark|floatformat:4 }}</td>
+                    <td style="padding: 8px; border-bottom: 1px solid #444;">{{ result.normalized.chemistry.normalized_mark|floatformat:4 }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <h4>🧮 Weight Calculation</h4>
+            <p>
+              <strong>Weighted Total = (Maths×5 + Physics×3 + Chemistry×2) ÷ 10</strong><br>
+              = ({{ result.normalized.maths.normalized_mark|floatformat:4 }} × 5) +
+                ({{ result.normalized.physics.normalized_mark|floatformat:4 }} × 3) +
+                ({{ result.normalized.chemistry.normalized_mark|floatformat:4 }} × 2) ÷ 10<br>
+              = <strong>{{ result.normalized_total|floatformat:4 }}</strong>
+            </p>
+
+            {% if result.original.entrance %}
+            <h4>🎯 Final KEAM Index</h4>
+            <p>
+              <strong>KEAM Index = (Weighted Total + Entrance Score) ÷ 2</strong><br>
+              = ({{ result.normalized_total|floatformat:4 }} + {{ result.original.entrance|floatformat:4 }}) ÷ 2<br>
+              = <strong>{{ result.final_score|floatformat:4 }}</strong>
+            </p>
+            {% else %}
+            <h4>🎯 Final KEAM Index</h4>
+            <p>
+              <strong>KEAM Index = Weighted Total</strong><br>
+              = <strong>{{ result.final_score|floatformat:4 }}</strong> (No entrance score provided)
+            </p>
+            {% endif %}
+          </div>
+        </details>
+
+        <div style="margin-top: 20px;">
+          <a href="javascript:window.print()" class="button">🖨️ Download PDF</a>
+          <a href="{% url 'keam_app:marks_form' %}" class="button">← Back to Form</a>
+        </div>
+      </div>
+
+      <script>
+        document.addEventListener("DOMContentLoaded", () => {
+          const ctx = document.getElementById('scoreChart').getContext('2d');
+          new Chart(ctx, {
+            type: "bar",
+            data: {
+              labels: ["Maths (5)", "Physics (3)", "Chemistry (2)"],
+              datasets: [{
+                label: "Normalized Score",
+                data: [
+                  {{ result.normalized.maths.normalized_mark }},
+                  {{ result.normalized.physics.normalized_mark }},
+                  {{ result.normalized.chemistry.normalized_mark }}
+                ],
+                backgroundColor: ['#ffc75f', '#f9f871', '#f6b8b8'],
+                borderColor: ['#e8b04d', '#e5e562', '#e4a3a3'],
+                borderWidth: 1
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              animation: {
+                duration: 0
+              },
+              scales: {
+                y: {
+                  beginAtZero: true,
+                  max: 100,
+                  grid: {
+                    color: 'rgba(255,255,255,0.1)'
+                  },
+                  ticks: {
+                    color: '#ccc'
+                  }
+                },
+                x: {
+                  grid: {
+                    display: false
+                  },
+                  ticks: {
+                    color: '#ccc'
+                  }
+                }
+              },
+              plugins: {
+                legend: {
+                  display: false
+                },
+                tooltip: {
+                  backgroundColor: '#333',
+                  titleColor: '#ffd369',
+                  bodyColor: '#fff',
+                  borderColor: '#555',
+                  borderWidth: 1,
+                  callbacks: {
+                    label: function(context) {
+                      return `${context.dataset.label}: ${context.raw.toFixed(4)}`;
+                    }
+                  }
+                }
+              }
+            }
+          });
+        });
+      </script>
+
+    {% elif results %}
+      <div class="result-card">
+        <h2 style="margin-top: 0;">📂 Bulk KEAM Score Results</h2>
+        <div style="overflow-x: auto;">
+          {{ results|safe }}
+        </div>
+        <div style="margin-top: 20px;">
+          <a href="{% url 'keam_app:marks_form' %}" class="button">🔙 Back to Form</a>
+        </div>
+      </div>
+    {% else %}
+      <div class="result-card" style="text-align: center;">
+        <h3 style="margin-top: 0;">No results found</h3>
+        <p>Please enter your details to calculate your normalized score</p>
+        <a href="{% url 'keam_app:marks_form' %}" class="button">📝 Enter Marks</a>
+      </div>
+    {% endif %}
+  </div>
+</body>
+</html>

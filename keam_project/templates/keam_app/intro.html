@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>KEAM Score App - Welcome</title>
+  <link rel="stylesheet" href="/static/css/styles.css" />
+
+  <style>
+    body {
+      background-color: #0f0f0f;
+      color: #fefefe;
+      font-family: 'Segoe UI', sans-serif;
+      padding-top: 60px;  /* Reduced for better spacing */
+      margin: 0;
+    }
+
+    .logo {
+      width: 550px;
+      height: auto;
+      animation: bounceIn 1.5s ease;
+      margin-bottom: 10px;
+      max-width: 90%;
+    }
+
+    @keyframes bounceIn {
+      0% { transform: scale(0); opacity: 0; }
+      60% { transform: scale(1.1); opacity: 1; }
+      100% { transform: scale(1); }
+    }
+
+    .fade {
+      opacity: 0;
+      transform: translateY(20px);
+      transition: opacity 1s ease, transform 1s ease;
+      text-align: center;
+    }
+
+    body.loaded .fade {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .welcome-section {
+      margin-bottom: 40px;
+    }
+
+    .year-form {
+      margin: 30px auto;
+      max-width: 300px;
+    }
+
+    .info-section {
+      background: rgba(30, 30, 30, 0.8);
+      padding: 30px 20px;
+      margin-top: 40px;
+      border-top: 1px solid #444;
+    }
+
+    .methodology {
+      max-width: 700px;
+      margin: 0 auto;
+      padding: 20px;
+      line-height: 1.6;
+    }
+
+    .methodology h3 {
+      color: #ffd369;
+      margin-top: 0;
+    }
+
+    footer {
+      margin-top: 0;
+      padding: 15px;
+      font-size: 12px;
+      color: #aaa;
+      text-align: center;
+      background: rgba(20, 20, 20, 0.8);
+    }
+
+    /* Theme switcher and other existing styles remain the same */
+  </style>
+</head>
+<body>
+
+  <!-- Theme Switcher -->
+  <div class="theme-switcher">
+    <div class="theme-dropdown">
+      <button class="theme-btn">🎨 Themes</button>
+      <div class="theme-options">
+        <button onclick="setTheme('default')">Theme 1</button>
+        <button onclick="setTheme('ocean')">Theme 2</button>
+        <button onclick="setTheme('sunset')">Theme 3</button>
+        <button onclick="setTheme('matrix')">Theme 4</button>
+        <button onclick="setTheme('plain')">Theme 5</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="fade">
+    <img src="/static/img/logo.png" alt="KEAM Logo" class="logo"/>
+
+    <div class="welcome-section">
+      <h1>🚀 Welcome to KEAM Score Normalizer 2025</h1>
+
+      <form method="POST" action="{% url 'keam_app:select_year' %}" class="year-form">
+        {% csrf_token %}
+        <label for="year">Select your year:</label><br>
+        <select name="year" required>
+          {% for y in years %}
+            <option value="{{ y.id }}">{{ y.value }}</option>
+          {% endfor %}
+        </select>
+        <br>
+        <button type="submit" class="continue-btn">→ Continue</button>
+      </form>
+    </div>
+
+    <footer>Made by VJEC Students Kannur 💻</footer>
+
+    <div class="info-section">
+      <div class="methodology">
+        <h3>About This Tool</h3>
+        <p>A comprehensive tool for Kerala Engineering Architecture Medical (KEAM) aspirants to calculate their normalized scores across different examination boards.</p>
+
+        <h3>📊 Normalization Method Used:</h3>
+        <p>We use a <strong>statistical standardization</strong> approach:</p>
+        <ol>
+          <li>Convert board marks to common percentile scale</li>
+          <li>Apply Kerala state board statistics</li>
+          <li>Calculate weighted scores (Maths×5 + Physics×3 + Chemistry×2)</li>
+          <li>Combine with entrance exam scores</li>
+        </ol>
+        <p>Following official KEAM normalization guidelines for accuracy.</p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      document.body.classList.add("loaded");
+      const saved = localStorage.getItem("theme") || "default";
+      document.body.className += " theme-" + saved;
+    });
+
+    function setTheme(name) {
+      document.body.className = document.body.className.replace(/theme-\w+/g, "");
+      document.body.classList.add("theme-" + name);
+      localStorage.setItem("theme", name);
+    }
+  </script>
+</body>
+</html>
