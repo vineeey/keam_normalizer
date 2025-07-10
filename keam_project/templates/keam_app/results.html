@@ -47,10 +47,10 @@
         </div>
 
         <ul class="result-list">
-          <li><span>Maths (Weight: 5):</span> <span class="result-value">{{ result.normalized.maths.normalized_mark|floatformat:4 }}</span></li>
-          <li><span>Physics (Weight: 3):</span> <span class="result-value">{{ result.normalized.physics.normalized_mark|floatformat:4 }}</span></li>
-          <li><span>Chemistry (Weight: 2):</span> <span class="result-value">{{ result.normalized.chemistry.normalized_mark|floatformat:4 }}</span></li>
-          <li><span>Weighted Total:</span> <span class="result-value">{{ result.normalized_total|floatformat:4 }}</span></li>
+          <li><span>Maths (Scale: ×1.5):</span> <span class="result-value">{{ result.normalized.maths.normalized_mark|floatformat:4 }}</span></li>
+          <li><span>Physics (Scale: ×0.9):</span> <span class="result-value">{{ result.normalized.physics.normalized_mark|floatformat:4 }}</span></li>
+          <li><span>Chemistry (Scale: ×0.6):</span> <span class="result-value">{{ result.normalized.chemistry.normalized_mark|floatformat:4 }}</span></li>
+          <li><span>Scaled Total:</span> <span class="result-value">{{ result.scaled_total|floatformat:4 }}</span></li>
           {% if result.original.entrance %}
           <li><span>Entrance Score:</span> <span class="result-value">{{ result.original.entrance|floatformat:4 }}</span></li>
           {% endif %}
@@ -64,8 +64,8 @@
             <p style="background: #333; padding: 10px; border-radius: 5px;">
               <strong>Z-score = (Your Mark - Board Mean) ÷ Board SD</strong><br>
               <strong>Percentile = Φ(Z) × 100 (from normal distribution)</strong><br>
-              <strong>Kerala Z = Φ⁻¹(Percentile/100)</strong><br>
-              <strong>Normalized Mark = Kerala Mean + (Kerala Z × Kerala SD)</strong>
+              <strong>Kerala HSE Z = Φ⁻¹(Percentile/100)</strong><br>
+              <strong>Normalized Mark = Kerala Mean + (Kerala HSE Z × Kerala SD)</strong>
             </p>
 
             <h4>📐 Subject-wise Calculation</h4>
@@ -105,7 +105,7 @@
                     <td style="padding: 8px; border-bottom: 1px solid #444;">{{ result.normalized.chemistry.sd_source|default:"10.0" }}</td>
                   </tr>
                   <tr>
-                    <td style="padding: 8px; border-bottom: 1px solid #444;">Z-score</td>
+                    <td style="padding: 8px; border-bottom: 1px solid #444;">Z-score (Board)</td>
                     <td style="padding: 8px; border-bottom: 1px solid #444;">{{ result.normalized.maths.z_score|floatformat:4 }}</td>
                     <td style="padding: 8px; border-bottom: 1px solid #444;">{{ result.normalized.physics.z_score|floatformat:4 }}</td>
                     <td style="padding: 8px; border-bottom: 1px solid #444;">{{ result.normalized.chemistry.z_score|floatformat:4 }}</td>
@@ -117,6 +117,12 @@
                     <td style="padding: 8px; border-bottom: 1px solid #444;">{{ result.normalized.chemistry.percentile|floatformat:2 }}%</td>
                   </tr>
                   <tr>
+                    <td style="padding: 8px; border-bottom: 1px solid #444;">Kerala HSE Z-score</td>
+                    <td style="padding: 8px; border-bottom: 1px solid #444;">{{ result.normalized.maths.z_kerala|floatformat:4 }}</td>
+                    <td style="padding: 8px; border-bottom: 1px solid #444;">{{ result.normalized.physics.z_kerala|floatformat:4 }}</td>
+                    <td style="padding: 8px; border-bottom: 1px solid #444;">{{ result.normalized.chemistry.z_kerala|floatformat:4 }}</td>
+                  </tr>
+                  <tr>
                     <td style="padding: 8px; border-bottom: 1px solid #444;">Normalized Mark</td>
                     <td style="padding: 8px; border-bottom: 1px solid #444;">{{ result.normalized.maths.normalized_mark|floatformat:4 }}</td>
                     <td style="padding: 8px; border-bottom: 1px solid #444;">{{ result.normalized.physics.normalized_mark|floatformat:4 }}</td>
@@ -126,26 +132,26 @@
               </table>
             </div>
 
-            <h4>🧮 Weight Calculation</h4>
+            <h4>🧮 Scaled Total Calculation</h4>
             <p>
-              <strong>Weighted Total = (Maths×5 + Physics×3 + Chemistry×2) ÷ 10</strong><br>
-              = ({{ result.normalized.maths.normalized_mark|floatformat:4 }} × 5) +
-                ({{ result.normalized.physics.normalized_mark|floatformat:4 }} × 3) +
-                ({{ result.normalized.chemistry.normalized_mark|floatformat:4 }} × 2) ÷ 10<br>
-              = <strong>{{ result.normalized_total|floatformat:4 }}</strong>
+              <strong>Scaled Total = (Maths×1.5 + Physics×0.9 + Chemistry×0.6)</strong><br>
+              = ({{ result.normalized.maths.normalized_mark|floatformat:4 }} × 1.5) +
+                ({{ result.normalized.physics.normalized_mark|floatformat:4 }} × 0.9) +
+                ({{ result.normalized.chemistry.normalized_mark|floatformat:4 }} × 0.6)<br>
+              = <strong>{{ result.scaled_total|floatformat:4 }}</strong>
             </p>
 
             {% if result.original.entrance %}
             <h4>🎯 Final KEAM Index</h4>
             <p>
-              <strong>KEAM Index = (Weighted Total + Entrance Score)</strong><br>
-              = ({{ result.normalized_total|floatformat:4 }} + {{ result.original.entrance|floatformat:4 }})<br>
+              <strong>KEAM Index = (Scaled Total + Entrance Score)</strong><br>
+              = ({{ result.scaled_total|floatformat:4 }} + {{ result.original.entrance|floatformat:4 }})<br>
               = <strong>{{ result.final_score|floatformat:4 }}</strong>
             </p>
             {% else %}
             <h4>🎯 Final KEAM Index</h4>
             <p>
-              <strong>KEAM Index = Weighted Total</strong><br>
+              <strong>KEAM Index = Scaled Total</strong><br>
               = <strong>{{ result.final_score|floatformat:4 }}</strong> (No entrance score provided)
             </p>
             {% endif %}
@@ -164,7 +170,7 @@
           new Chart(ctx, {
             type: "bar",
             data: {
-              labels: ["Maths (5)", "Physics (3)", "Chemistry (2)"],
+              labels: ["Maths (×1.5)", "Physics (×0.9)", "Chemistry (×0.6)"],
               datasets: [{
                 label: "Normalized Score",
                 data: [
