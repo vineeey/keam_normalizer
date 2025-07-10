@@ -38,15 +38,13 @@ def get_db_subject_name(view_subject):
 # Enhanced Normalization Function with error handling
 def normalize_mark(x, mean_board, sd_board, mean_kerala, sd_kerala):
     try:
-        # Handle division by zero and invalid SD values
         if sd_board <= 0:
-            sd_board = 0.1  # Prevent division by zero
+            sd_board = 0.1
         if sd_kerala <= 0:
             sd_kerala = 0.1
 
         z_score = (x - mean_board) / sd_board
 
-        # Handle extreme z-scores to avoid infinite values
         if z_score < -8:
             percentile = 0.0001
         elif z_score > 8:
@@ -54,7 +52,6 @@ def normalize_mark(x, mean_board, sd_board, mean_kerala, sd_kerala):
         else:
             percentile = norm.cdf(z_score)
 
-        # Clamp percentiles to avoid infinite z-scores
         clamped_percentile = max(0.0001, min(percentile, 0.9999))
         z_kerala = norm.ppf(clamped_percentile)
         normalized = z_kerala * sd_kerala + mean_kerala
@@ -64,7 +61,7 @@ def normalize_mark(x, mean_board, sd_board, mean_kerala, sd_kerala):
             "mean_source": mean_board,
             "sd_source": sd_board,
             "z_score": z_score,
-            "percentile": percentile,
+            "percentile": percentile * 100,  # Convert to percentage
             "z_kerala": z_kerala,
             "mean_kerala": mean_kerala,
             "sd_kerala": sd_kerala,
@@ -72,12 +69,11 @@ def normalize_mark(x, mean_board, sd_board, mean_kerala, sd_kerala):
         }
     except Exception as e:
         logger.error(f"Normalization error: {e}")
-        # Fallback to linear scaling
         return {
             "normalized_mark": (x / 100) * mean_kerala,
+            "percentile": 50.0,  # Default percentile
             "error": str(e)
         }
-
 # Single Student Normalization with proper weight calculation
 # views.py
 def result(request):
@@ -168,7 +164,7 @@ def result(request):
             weighted_total += norm_data["normalized_mark"] * weights[view_subject]
 
         normalized_total = round(weighted_total / total_weights, 4)
-        final_score = round((normalized_total + entrance) / 2, 4) if entrance else normalized_total
+        final_score = round((normalized_total + entrance), 4) if entrance else normalized_total
 
         context['result'] = {
             'normalized': normalized,

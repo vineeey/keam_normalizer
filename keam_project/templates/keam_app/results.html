@@ -9,7 +9,6 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body class="theme-default">
-  <!-- Replace the theme-switcher div with this -->
   <div class="theme-switcher">
     <div class="theme-dropdown">
       <button class="theme-btn">🎨 Themes</button>
@@ -18,7 +17,7 @@
         <button onclick="setTheme('ocean')">Theme 2</button>
         <button onclick="setTheme('sunset')">Theme 3</button>
         <button onclick="setTheme('matrix')">Theme 4</button>
-        <button onclick="setTheme('plain')">Theme5</button>
+        <button onclick="setTheme('plain')">Theme 5</button>
       </div>
     </div>
   </div>
@@ -64,8 +63,8 @@
             <h4>🔹 Normalization Process</h4>
             <p style="background: #333; padding: 10px; border-radius: 5px;">
               <strong>Z-score = (Your Mark - Board Mean) ÷ Board SD</strong><br>
-              <strong>Percentile = Φ(Z) from normal distribution</strong><br>
-              <strong>Kerala Z = Φ⁻¹(Percentile)</strong><br>
+              <strong>Percentile = Φ(Z) × 100 (from normal distribution)</strong><br>
+              <strong>Kerala Z = Φ⁻¹(Percentile/100)</strong><br>
               <strong>Normalized Mark = Kerala Mean + (Kerala Z × Kerala SD)</strong>
             </p>
 
@@ -112,6 +111,12 @@
                     <td style="padding: 8px; border-bottom: 1px solid #444;">{{ result.normalized.chemistry.z_score|floatformat:4 }}</td>
                   </tr>
                   <tr>
+                    <td style="padding: 8px; border-bottom: 1px solid #444;">Percentile</td>
+                    <td style="padding: 8px; border-bottom: 1px solid #444;">{{ result.normalized.maths.percentile|floatformat:2 }}%</td>
+                    <td style="padding: 8px; border-bottom: 1px solid #444;">{{ result.normalized.physics.percentile|floatformat:2 }}%</td>
+                    <td style="padding: 8px; border-bottom: 1px solid #444;">{{ result.normalized.chemistry.percentile|floatformat:2 }}%</td>
+                  </tr>
+                  <tr>
                     <td style="padding: 8px; border-bottom: 1px solid #444;">Normalized Mark</td>
                     <td style="padding: 8px; border-bottom: 1px solid #444;">{{ result.normalized.maths.normalized_mark|floatformat:4 }}</td>
                     <td style="padding: 8px; border-bottom: 1px solid #444;">{{ result.normalized.physics.normalized_mark|floatformat:4 }}</td>
@@ -133,8 +138,8 @@
             {% if result.original.entrance %}
             <h4>🎯 Final KEAM Index</h4>
             <p>
-              <strong>KEAM Index = (Weighted Total + Entrance Score) ÷ 2</strong><br>
-              = ({{ result.normalized_total|floatformat:4 }} + {{ result.original.entrance|floatformat:4 }}) ÷ 2<br>
+              <strong>KEAM Index = (Weighted Total + Entrance Score)</strong><br>
+              = ({{ result.normalized_total|floatformat:4 }} + {{ result.original.entrance|floatformat:4 }})<br>
               = <strong>{{ result.final_score|floatformat:4 }}</strong>
             </p>
             {% else %}
