@@ -38,6 +38,17 @@ def get_db_subject_name(view_subject):
 
 
 def normalize_mark(x, mean_board, sd_board, mean_kerala, sd_kerala):
+    """
+    Normalize marks using 1:1:1 method with scaling to ensure 100->100
+    Args:
+        x: Student's mark
+        mean_board: Source board's mean
+        sd_board: Source board's standard deviation
+        mean_kerala: Kerala board's mean
+        sd_kerala: Kerala board's standard deviation
+    Returns:
+        Dictionary with all normalization details
+    """
     try:
         # Handle potential division by zero
         if sd_board <= 0:
@@ -45,25 +56,23 @@ def normalize_mark(x, mean_board, sd_board, mean_kerala, sd_kerala):
         if sd_kerala <= 0:
             sd_kerala = 0.1
 
-        # Step 1: Compute z-score for the student's mark
+        # Step 1: Compute z-score
         z = (x - mean_board) / sd_board
 
-        # Step 2: Compute raw normalized mark in Kerala scale
+        # Step 2: Raw normalized mark (unbounded)
         raw_normalized = mean_kerala + z * sd_kerala
 
-        # Step 3: Compute z-score for maximum mark (100)
+        # Step 3: Compute maximum possible normalized mark (for 100)
         z_100 = (100 - mean_board) / sd_board
-
-        # Step 4: Compute maximum possible normalized mark
         max_normalized = mean_kerala + z_100 * sd_kerala
 
-        # Step 5: Final scaling to ensure 100 → 100
+        # Step 4: Final scaling to ensure 100->100
         if max_normalized <= 0:  # Prevent division by zero
             final_normalized = raw_normalized
         else:
             final_normalized = (raw_normalized / max_normalized) * 100
 
-        # Ensure marks stay within 0-100 range
+        # Clamp between 0-100
         final_normalized = max(0, min(final_normalized, 100))
 
         return {
@@ -71,8 +80,6 @@ def normalize_mark(x, mean_board, sd_board, mean_kerala, sd_kerala):
             "mean_source": mean_board,
             "sd_source": sd_board,
             "z_score": z,
-            "percentile": None,
-            "z_kerala": z,  # Same as source z-score in this method
             "mean_kerala": mean_kerala,
             "sd_kerala": sd_kerala,
             "raw_normalized": raw_normalized,
@@ -81,16 +88,16 @@ def normalize_mark(x, mean_board, sd_board, mean_kerala, sd_kerala):
         }
     except Exception as e:
         logger.error(f"Normalization error: {e}")
-        # Fallback calculation with clamping
+        # Fallback proportional calculation
         fallback = mean_kerala * (x / 100)
         return {
             "normalized_mark": max(0, min(fallback, 100)),
-            "percentile": None,
             "error": str(e)
         }
 
 
 def result(request):
+    """Handle mark submission and return normalized results"""
     if request.method != 'POST':
         return redirect('keam_app:marks_form')
 
@@ -141,10 +148,9 @@ def result(request):
             if not stat:
                 error_msgs.append(f"No Kerala HSE stats for {view_subject} - using default values")
 
-        # Normalize marks
+        # Normalize marks with 1:1:1 ratio
         normalized = {}
-        scaling_factors = {'maths': 1.5, 'physics': 0.9, 'chemistry': 0.6}  # KEAM 2025 scaling
-        scaled_total = 0
+        total_normalized = 0  # Changed from scaled_total for 1:1:1 method
 
         for view_subject, mark in marks.items():
             db_subject = get_db_subject_name(view_subject)
@@ -167,14 +173,14 @@ def result(request):
 
             norm_data["board_name"] = board.name
             normalized[view_subject] = norm_data
-            scaled_total += norm_data["normalized_mark"] * scaling_factors[view_subject]
+            total_normalized += norm_data["normalized_mark"]  # Simple sum for 1:1:1
 
-        # Final score (adjust if KEAM uses (scaled_total + entrance)/2)
-        final_score = round(scaled_total + entrance, 4)  # Modify as needed
+        # Final score calculation (total_normalized + entrance)
+        final_score = round(total_normalized + entrance, 4)
 
         context['result'] = {
             'normalized': normalized,
-            'scaled_total': scaled_total,
+            'total_normalized': total_normalized,
             'final_score': final_score,
             'original': {**marks, 'entrance': entrance}
         }
@@ -188,6 +194,7 @@ def result(request):
 
 @csrf_exempt
 def upload_and_process(request):
+    """Handle bulk mark uploads"""
     if request.method == "POST" and request.FILES.get('marks_file'):
         try:
             file = request.FILES['marks_file']
@@ -228,7 +235,8 @@ def upload_and_process(request):
             ).first()
             kerala_stats[view_subject] = (stat.mean, stat.sd) if stat else (70.0, 10.0)
 
-        scaling_factors = {'maths': 1.5, 'physics': 0.9, 'chemistry': 0.6}  # KEAM 2025 scaling
+        # 1:1:1 ratio for all subjects
+        scaling_factors = {'maths': 1.0, 'physics': 1.0, 'chemistry': 1.0}
         results = []
         errors = []
 
@@ -259,7 +267,7 @@ def upload_and_process(request):
                     defaults={'name': board_name, 'year': year}
                 )
 
-                scaled_total = 0
+                total_normalized = 0
                 subject_results = {}
                 row_errors = []
 
@@ -283,15 +291,15 @@ def upload_and_process(request):
                         row_errors.append(f"Normalization failed for {view_subject}")
 
                     subject_results[view_subject] = norm_data
-                    scaled_total += norm_data["normalized_mark"] * scaling_factors[view_subject]
+                    total_normalized += norm_data["normalized_mark"] * scaling_factors[view_subject]
 
-                final_score = round(scaled_total + entrance, 4)  # Modify if KEAM uses (scaled_total + entrance)/2
+                final_score = round(total_normalized + entrance, 4)
 
                 results.append({
                     'board': board_name,
                     'marks': marks,
                     'entrance': entrance,
-                    'scaled_total': scaled_total,
+                    'total_normalized': total_normalized,
                     'final_score': final_score,
                     'subject_results': subject_results,
                     'errors': row_errors
