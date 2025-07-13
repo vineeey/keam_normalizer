@@ -47,14 +47,14 @@
         </div>
 
         <ul class="result-list">
-          <li><span>Maths (Scale: ×1.5):</span> <span class="result-value">{{ result.normalized.maths.normalized_mark|floatformat:4 }}</span></li>
-          <li><span>Physics (Scale: ×0.9):</span> <span class="result-value">{{ result.normalized.physics.normalized_mark|floatformat:4 }}</span></li>
-          <li><span>Chemistry (Scale: ×0.6):</span> <span class="result-value">{{ result.normalized.chemistry.normalized_mark|floatformat:4 }}</span></li>
-          <li><span>Scaled Total:</span> <span class="result-value">{{ result.scaled_total|floatformat:4 }}</span></li>
+          <li><span>Maths (Scale: ×1.5):</span> <span class="result-value">{{ result.normalized.maths.normalized_mark|floatformat:2 }}</span></li>
+          <li><span>Physics (Scale: ×0.9):</span> <span class="result-value">{{ result.normalized.physics.normalized_mark|floatformat:2 }}</span></li>
+          <li><span>Chemistry (Scale: ×0.6):</span> <span class="result-value">{{ result.normalized.chemistry.normalized_mark|floatformat:2 }}</span></li>
+          <li><span>Scaled Total:</span> <span class="result-value">{{ result.scaled_total|floatformat:2 }}</span></li>
           {% if result.original.entrance %}
-          <li><span>Entrance Score:</span> <span class="result-value">{{ result.original.entrance|floatformat:4 }}</span></li>
+          <li><span>Entrance Score:</span> <span class="result-value">{{ result.original.entrance|floatformat:2 }}</span></li>
           {% endif %}
-          <li><span>Final KEAM Index:</span> <span class="result-value">{{ result.final_score|floatformat:4 }}</span></li>
+          <li><span>Final KEAM Index:</span> <span class="result-value">{{ result.final_score|floatformat:2 }}</span></li>
         </ul>
 
         <details>
@@ -63,9 +63,9 @@
             <h4>🔹 Normalization Process</h4>
             <p style="background: #333; padding: 10px; border-radius: 5px;">
               <strong>Z-score = (Your Mark - Board Mean) ÷ Board SD</strong><br>
-              <strong>Percentile = Φ(Z) × 100 (from normal distribution)</strong><br>
-              <strong>Kerala HSE Z = Φ⁻¹(Percentile/100)</strong><br>
-              <strong>Normalized Mark = Kerala Mean + (Kerala HSE Z × Kerala SD)</strong>
+              <strong>Raw Normalized = Kerala Mean + (Z × Kerala SD)</strong><br>
+              <strong>Max Normalized = Kerala Mean + (Z<sub>100</sub> × Kerala SD)</strong><br>
+              <strong>Final Normalized = (Raw Normalized ÷ Max Normalized) × 100</strong>
             </p>
 
             <h4>📐 Subject-wise Calculation</h4>
@@ -105,25 +105,25 @@
                     <td style="padding: 8px; border-bottom: 1px solid #444;">{{ result.normalized.chemistry.sd_source|default:"10.0" }}</td>
                   </tr>
                   <tr>
-                    <td style="padding: 8px; border-bottom: 1px solid #444;">Z-score (Board)</td>
+                    <td style="padding: 8px; border-bottom: 1px solid #444;">Z-score</td>
                     <td style="padding: 8px; border-bottom: 1px solid #444;">{{ result.normalized.maths.z_score|floatformat:4 }}</td>
                     <td style="padding: 8px; border-bottom: 1px solid #444;">{{ result.normalized.physics.z_score|floatformat:4 }}</td>
                     <td style="padding: 8px; border-bottom: 1px solid #444;">{{ result.normalized.chemistry.z_score|floatformat:4 }}</td>
                   </tr>
                   <tr>
-                    <td style="padding: 8px; border-bottom: 1px solid #444;">Percentile</td>
-                    <td style="padding: 8px; border-bottom: 1px solid #444;">{{ result.normalized.maths.percentile|floatformat:2 }}%</td>
-                    <td style="padding: 8px; border-bottom: 1px solid #444;">{{ result.normalized.physics.percentile|floatformat:2 }}%</td>
-                    <td style="padding: 8px; border-bottom: 1px solid #444;">{{ result.normalized.chemistry.percentile|floatformat:2 }}%</td>
+                    <td style="padding: 8px; border-bottom: 1px solid #444;">Raw Normalized</td>
+                    <td style="padding: 8px; border-bottom: 1px solid #444;">{{ result.normalized.maths.raw_normalized|floatformat:4 }}</td>
+                    <td style="padding: 8px; border-bottom: 1px solid #444;">{{ result.normalized.physics.raw_normalized|floatformat:4 }}</td>
+                    <td style="padding: 8px; border-bottom: 1px solid #444;">{{ result.normalized.chemistry.raw_normalized|floatformat:4 }}</td>
                   </tr>
                   <tr>
-                    <td style="padding: 8px; border-bottom: 1px solid #444;">Kerala HSE Z-score</td>
-                    <td style="padding: 8px; border-bottom: 1px solid #444;">{{ result.normalized.maths.z_kerala|floatformat:4 }}</td>
-                    <td style="padding: 8px; border-bottom: 1px solid #444;">{{ result.normalized.physics.z_kerala|floatformat:4 }}</td>
-                    <td style="padding: 8px; border-bottom: 1px solid #444;">{{ result.normalized.chemistry.z_kerala|floatformat:4 }}</td>
+                    <td style="padding: 8px; border-bottom: 1px solid #444;">Max Normalized</td>
+                    <td style="padding: 8px; border-bottom: 1px solid #444;">{{ result.normalized.maths.max_normalized|floatformat:4 }}</td>
+                    <td style="padding: 8px; border-bottom: 1px solid #444;">{{ result.normalized.physics.max_normalized|floatformat:4 }}</td>
+                    <td style="padding: 8px; border-bottom: 1px solid #444;">{{ result.normalized.chemistry.max_normalized|floatformat:4 }}</td>
                   </tr>
                   <tr>
-                    <td style="padding: 8px; border-bottom: 1px solid #444;">Normalized Mark</td>
+                    <td style="padding: 8px; border-bottom: 1px solid #444;">Final Normalized</td>
                     <td style="padding: 8px; border-bottom: 1px solid #444;">{{ result.normalized.maths.normalized_mark|floatformat:4 }}</td>
                     <td style="padding: 8px; border-bottom: 1px solid #444;">{{ result.normalized.physics.normalized_mark|floatformat:4 }}</td>
                     <td style="padding: 8px; border-bottom: 1px solid #444;">{{ result.normalized.chemistry.normalized_mark|floatformat:4 }}</td>
@@ -186,9 +186,6 @@
             options: {
               responsive: true,
               maintainAspectRatio: false,
-              animation: {
-                duration: 0
-              },
               scales: {
                 y: {
                   beginAtZero: true,
@@ -221,7 +218,7 @@
                   borderWidth: 1,
                   callbacks: {
                     label: function(context) {
-                      return `${context.dataset.label}: ${context.raw.toFixed(4)}`;
+                      return `${context.dataset.label}: ${context.raw.toFixed(2)}`;
                     }
                   }
                 }
@@ -230,7 +227,6 @@
           });
         });
       </script>
-
     {% elif results %}
       <div class="result-card">
         <h2 style="margin-top: 0;">📂 Bulk KEAM Score Results</h2>

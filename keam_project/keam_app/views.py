@@ -5,7 +5,6 @@ from .forms import MarkEntryForm
 from .models import Year, Board, SubjectStat
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
-from scipy.stats import norm
 import pandas as pd
 
 logger = logging.getLogger(__name__)
@@ -40,45 +39,53 @@ def get_db_subject_name(view_subject):
 
 def normalize_mark(x, mean_board, sd_board, mean_kerala, sd_kerala):
     try:
+        # Handle potential division by zero
         if sd_board <= 0:
             sd_board = 0.1
         if sd_kerala <= 0:
             sd_kerala = 0.1
 
-        # Step 1: Compute board z-score
-        z_score = (x - mean_board) / sd_board
+        # Step 1: Compute z-score for the student's mark
+        z = (x - mean_board) / sd_board
 
-        # Step 2: Convert z-score to percentile (0-100 scale)
-        if z_score < -8:
-            percentile = 0.0001
-        elif z_score > 8:
-            percentile = 0.9999
+        # Step 2: Compute raw normalized mark in Kerala scale
+        raw_normalized = mean_kerala + z * sd_kerala
+
+        # Step 3: Compute z-score for maximum mark (100)
+        z_100 = (100 - mean_board) / sd_board
+
+        # Step 4: Compute maximum possible normalized mark
+        max_normalized = mean_kerala + z_100 * sd_kerala
+
+        # Step 5: Final scaling to ensure 100 → 100
+        if max_normalized <= 0:  # Prevent division by zero
+            final_normalized = raw_normalized
         else:
-            percentile = norm.cdf(z_score)
-        percentile_percent = percentile * 100  # Convert to percentage (0-100)
+            final_normalized = (raw_normalized / max_normalized) * 100
 
-        # Step 3: Convert percentile to Kerala HSE z-score using the formula
-        z_kerala = (percentile_percent - 50) / 29.0
-
-        # Step 4: Compute normalized mark
-        normalized = z_kerala * sd_kerala + mean_kerala
+        # Ensure marks stay within 0-100 range
+        final_normalized = max(0, min(final_normalized, 100))
 
         return {
             "student_mark": x,
             "mean_source": mean_board,
             "sd_source": sd_board,
-            "z_score": z_score,
-            "percentile": percentile_percent,
-            "z_kerala": z_kerala,
+            "z_score": z,
+            "percentile": None,
+            "z_kerala": z,  # Same as source z-score in this method
             "mean_kerala": mean_kerala,
             "sd_kerala": sd_kerala,
-            "normalized_mark": normalized
+            "raw_normalized": raw_normalized,
+            "max_normalized": max_normalized,
+            "normalized_mark": final_normalized
         }
     except Exception as e:
         logger.error(f"Normalization error: {e}")
+        # Fallback calculation with clamping
+        fallback = mean_kerala * (x / 100)
         return {
-            "normalized_mark": (x / 100) * mean_kerala,
-            "percentile": 50.0,  # Default percentile
+            "normalized_mark": max(0, min(fallback, 100)),
+            "percentile": None,
             "error": str(e)
         }
 
@@ -157,7 +164,6 @@ def result(request):
 
             if 'error' in norm_data:
                 error_msgs.append(f"Normalization failed for {view_subject}: {norm_data['error']}")
-                norm_data['normalized_mark'] = (mark / 100) * mean_kerala
 
             norm_data["board_name"] = board.name
             normalized[view_subject] = norm_data
